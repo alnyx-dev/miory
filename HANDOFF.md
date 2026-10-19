@@ -279,6 +279,15 @@ npx tsx scripts/dev/raydium-clmm.ts
 
 ---
 
+## 7.1 Сайт и метаданные
+
+- `site/` — лендинг, метаданные (Metaplex-формат) и знак; воркфлоу
+  `.github/workflows/pages.yml` публикует статику на GitHub Pages.
+- On-chain URI уже обновлён на `https://alnyx-dev.github.io/miory/metadata.json`
+  (`set_metadata` ✓, tx `5VH71tdNmc98QznFd9KwJmFr8uarK5nfxZt751EM79mi9Qj1odjthLXEhYrrjKYnjobScsGtN2VK4nqH7WujGwS7`).
+- **Pages требует публичный репозиторий** на бесплатном плане: сделайте репозиторий
+  публичным и перезапустите воркфлоу `Pages`.
+
 ## 8.1 Проверки, которые уже автоматизированы
 
 | Проверка | Где | Статус |

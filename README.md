@@ -122,7 +122,23 @@ SPL-multisig или treasury Squads: адрес мультисига — это 
 активируется через две эпохи (механизм самого Token-2022), а pause/denylist
 применяются сразу — pause это emergency-контроль, и задерживать его нельзя.
 
-### Зависимости и аудит
+### Сайт и метаданные
+
+- `site/index.html` — лендинг: показывает живой supply токена с публичного RPC.
+- `site/metadata.json` — метаданные в стандартном формате (Metaplex).
+- `site/logo.svg` — знак токена.
+- `.github/workflows/pages.yml` — публикация статики на GitHub Pages.
+
+On-chain URI токена указывает на `https://alnyx-dev.github.io/miory/metadata.json`
+(обновлён инструкцией `set_metadata`, tx
+`5VH71tdNmc98QznFd9KwJmFr8uarK5nfxZt751EM79mi9Qj1odjthLXEhYrrjKYnjobScsGtN2VK4nqH7WujGwS7`).
+
+**GitHub Pages на бесплатном плане работает только для публичных репозиториев.**
+Чтобы сайт поднялся, сделайте репозиторий публичным (или используйте платный
+план) и перезапустите воркфлоу `Pages`. Пока репозиторий приватный, метаданные
+доступны напрямую в репозитории: `site/metadata.json`.
+
+## Зависимости и аудит
 
 `cargo audit` (RustSec Advisory DB) — **0 уязвимостей** ✓. Проверка запускается
 в CI на каждом PR (`rustsec/audit-check`).
