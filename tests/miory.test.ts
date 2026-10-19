@@ -313,8 +313,14 @@ describe("MIORY", () => {
     let failed = false;
     try {
       await (program.methods as any)
-        .setTransferPolicy(false, new BN(0))
-        .accounts({ config, admin })
+        .setTransferFee(FEE_BPS, new BN(1_000_000))
+        .accounts({
+          config,
+          admin,
+          authority,
+          mint,
+          tokenProgram: TOKEN_2022_PROGRAM_ID,
+        })
         .rpc();
     } catch (error) {
       failed = true;
@@ -322,8 +328,14 @@ describe("MIORY", () => {
     expect(failed).to.equal(true);
 
     await (nextProgram.methods as any)
-      .setTransferPolicy(false, new BN(0))
-      .accounts({ config, admin: nextAdmin.publicKey })
+      .setTransferFee(FEE_BPS, new BN(1_000_000))
+      .accounts({
+        config,
+        admin: nextAdmin.publicKey,
+        authority,
+        mint,
+        tokenProgram: TOKEN_2022_PROGRAM_ID,
+      })
       .rpc();
 
     // hand the role back to the original admin for the rest of the suite
@@ -428,7 +440,12 @@ describe("MIORY", () => {
       ])
       .rpc();
 
-    const account = await getAccount(connection, recipientAta, "processed");
+    const account = await getAccount(
+      connection,
+      recipientAta,
+      "processed",
+      TOKEN_2022_PROGRAM_ID,
+    );
     expect(account.isFrozen).to.equal(false);
   });
 });
