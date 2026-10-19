@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>MIORY</title>
+    <meta name="description" content="MIORY — токен на Solana (Token-2022) с комиссией перевода, которая сгорает." />
+    <link rel="icon" href="./logo.svg" type="image/svg+xml" />
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #0b0f14;
+        --fg: #e8f0f7;
+        --muted: #8b98a5;
+        --line: #1c2530;
+        --accent: #38bdf8;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--fg);
+        font: 16px/1.6 ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      }
+      .wrap { max-width: 780px; margin: 0 auto; padding: 72px 24px 96px; }
+      header { display: flex; align-items: center; gap: 16px; }
+      header img { width: 48px; height: 48px; border-radius: 12px; }
+      h1 { font-size: 30px; margin: 0; letter-spacing: -0.02em; }
+      .tag { color: var(--muted); font-size: 15px; }
+      p { color: #c3ced9; }
+      code, .mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 14px; }
+      .card {
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        padding: 18px 20px;
+        margin: 18px 0;
+        background: #0e141b;
+      }
+      .row { display: flex; justify-content: space-between; gap: 16px; padding: 7px 0; }
+      .row + .row { border-top: 1px solid var(--line); }
+      .row span:first-child { color: var(--muted); }
+      .row span:last-child { text-align: right; word-break: break-all; }
+      h2 { font-size: 15px; text-transform: uppercase; letter-spacing: 0.09em; color: var(--muted); margin: 44px 0 4px; font-weight: 600; }
+      ul { padding-left: 20px; color: #c3ced9; }
+      li { margin: 7px 0; }
+      a { color: var(--accent); text-decoration: none; border-bottom: 1px solid #1e3a4d; }
+      a:hover { border-bottom-color: var(--accent); }
+      footer { margin-top: 56px; color: var(--muted); font-size: 14px; }
+      .pill { display: inline-block; border: 1px solid var(--line); border-radius: 999px; padding: 2px 10px; font-size: 13px; color: var(--muted); }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <header>
+        <img src="./logo.svg" alt="MIORY" />
+        <div>
+          <h1>MIORY</h1>
+          <div class="tag">Solana · Token-2022 · комиссия перевода сгорает</div>
+        </div>
+      </header>
+
+      <p>
+        Токен, у которого правом выпуска владеет не кошелёк, а программа. Mint authority,
+        freeze authority и fee authority — это PDA программы: никто вне кода не может выпустить
+        токен, заморозить его или вывести удержанные комиссии.
+      </p>
+
+      <div class="card">
+        <div class="row"><span>Сеть</span><span>devnet</span></div>
+        <div class="row"><span>Программа</span><span class="mono">FmoRzYQcTNoFsWFXYwaqNCjsmN4gHjufp4kGTJXJrAx5</span></div>
+        <div class="row"><span>Mint</span><span class="mono">AWpKSeyPmFAs91y3MTbJ1jRS4zKfBKbAv3uKci6JEKFA</span></div>
+        <div class="row"><span>Decimals</span><span>9</span></div>
+        <div class="row"><span>Расширения</span><span class="mono">TransferFeeConfig, MetadataPointer, TokenMetadata</span></div>
+        <div class="row"><span>Supply</span><span id="supply">—</span></div>
+      </div>
+
+      <h2>Как это работает</h2>
+      <ul>
+        <li>Комиссия перевода удерживается нативным расширением <code>TransferFeeConfig</code>: токен-программа сама удерживает её и кладёт на аккаунт получателя как withheld fees.</li>
+        <li>Вывести удержанное может только fee authority — PDA программы. Единственная инструкция, которая это делает, <code>collect_fees</code>, сжигает комиссию, а не выводит её на кошелёк. Право вызвать её есть у любого — выигрывают держатели.</li>
+        <li>Политика держится на freeze authority: <code>freeze_account</code> / <code>thaw_account</code> и <code>sync_denylist</code>, который применяет список заблокированных адресов заморозкой их аккаунтов.</li>
+        <li>Правом админа передаётся через двухшаговую схему <code>propose_admin</code> → <code>accept_admin</code>: опечатка в адресе не блокирует протокол навсегда.</li>
+      </ul>
+
+      <h2>Ссылки</h2>
+      <ul>
+        <li><a href="https://explorer.solana.com/address/AWpKSeyPmFAs91y3MTbJ1jRS4zKfBKbAv3uKci6JEKFA?cluster=devnet">Mint в Explorer</a></li>
+        <li><a href="https://explorer.solana.com/address/FmoRzYQcTNoFsWFXYwaqNCjsmN4gHjufp4kGTJXJrAx5?cluster=devnet">Программа в Explorer</a></li>
+        <li><a href="https://explorer.solana.com/address/AEcgQ6dMDQAS9EHMH7cAYe5sRnNX6CjgV5UfNXvGKu?cluster=devnet">Админ-кошелёк в Explorer</a></li>
+        <li><a href="./metadata.json">Метаданные токена (JSON)</a></li>
+      </ul>
+
+      <footer>
+        Открытый код: <a href="https://github.com/alnyx-dev/miory">github.com/alnyx-dev/miory</a>
+      </footer>
+    </div>
+
+    <script>
+      // Живой supply с публичного devnet RPC.
+      const MINT = "AWpKSeyPmFAs91y3MTbJ1jRS4zKfBKbAv3uKci6JEKFA";
+      const RPC = "https://api.devnet.solana.com";
+      fetch(RPC, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          jsonrpc: "2.0",
+          id: 1,
+          method: "getAccountInfo",
+          params: [MINT, { encoding: "jsonParsed", commitment: "confirmed" }],
+        }),
+      })
+        .then((r) => r.json())
+        .then((res) => {
+          const value = res?.result?.value?.data?.parsed?.info?.supply;
+          if (value) {
+            document.getElementById("supply").textContent =
+              (Number(value) / 1e9).toLocaleString("ru-RU") + " MIORY";
+          }
+        })
+        .catch(() => {
+          document.getElementById("supply").textContent = "не удалось загрузить";
+        });
+    </script>
+  </body>
+</html>

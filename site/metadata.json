@@ -1,0 +1,39 @@
+{
+  "name": "MIORY",
+  "symbol": "MIORY",
+  "description": "MIORY — токен на Solana (Token-2022) с комиссией перевода, которая сгорает, и правом выпуска у программы, а не у кошелька.",
+  "uri": "https://alnyx-dev.github.io/miory/metadata.json",
+  "seller_fee_basis_points": 0,
+  "image": "https://alnyx-dev.github.io/miory/logo.svg",
+  "attributes": [
+    {
+      "trait_type": "Сеть",
+      "value": "Solana devnet"
+    },
+    {
+      "trait_type": "Стандарт",
+      "value": "Token-2022"
+    },
+    {
+      "trait_type": "Decimals",
+      "value": 9
+    },
+    {
+      "trait_type": "Комиссия перевода",
+      "value": "настраивается, по умолчанию 0 bps"
+    },
+    {
+      "trait_type": "Mint authority",
+      "value": "PDA программы"
+    }
+  ],
+  "properties": {
+    "category": "fungible",
+    "creators": [
+      {
+        "address": "AEcay6mpCFZDWrd5X33fJWuNveC98JYeskKBAsc7oiPg",
+        "share": 100
+      }
+    ]
+  }
+}
