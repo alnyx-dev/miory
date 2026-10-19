@@ -54,7 +54,7 @@ use constants::*;
 use errors::MioryError;
 use state::{Authority, Config, Denylist};
 
-declare_id!("FmoRzYQcTNoFsWFXYwaqNCjsmN4gHjufp4kGTJXJrAx5");
+declare_id!("8Zpfnt8KTaawG541AvpXxoYKo2dxd8Yk7U6k5Eu62HDF");
 
 /// Extensions of the MIORY mint. All of them have a fixed size, so the size
 /// of the mint is known upfront; the variable length `TokenMetadata`

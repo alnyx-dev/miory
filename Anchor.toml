@@ -8,10 +8,10 @@ cluster = "localnet"
 wallet = "~/.config/solana/id.json"
 
 [programs.localnet]
-miory = "FmoRzYQcTNoFsWFXYwaqNCjsmN4gHjufp4kGTJXJrAx5"
+miory = "8Zpfnt8KTaawG541AvpXxoYKo2dxd8Yk7U6k5Eu62HDF"
 
 [programs.devnet]
-miory = "FmoRzYQcTNoFsWFXYwaqNCjsmN4gHjufp4kGTJXJrAx5"
+miory = "8Zpfnt8KTaawG541AvpXxoYKo2dxd8Yk7U6k5Eu62HDF"
 
 [scripts]
 test = "npm run test:integration"
