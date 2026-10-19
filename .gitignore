@@ -1,0 +1,28 @@
+# Anchor build artifacts.
+# The program keypair lives in target/deploy and is deliberately NOT committed:
+# it is the upgrade authority of the program and belongs in a secret
+# (PROGRAM_KEYPAIR in the deploy workflow).
+/target
+
+# Rust
+**/*.rs.bk
+
+# Node
+node_modules
+dist
+.yarn
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/sdks
+!.yarn/versions
+.pnp.*
+
+# Local validator ledger
+.test-ledger
+
+# Editors / OS
+.idea
+.vscode
+.DS_Store

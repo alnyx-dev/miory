@@ -1,0 +1,31 @@
+[package]
+name = "miory"
+version = "0.1.0"
+description = "MIORY: Token-2022 mint with program-controlled authorities and burn-on-transfer hook"
+edition = "2021"
+license = "MIT"
+
+[lib]
+crate-type = ["cdylib", "lib"]
+name = "miory"
+
+# Anchor and the Solana BPF toolchain set cfgs the crates are not compiled with,
+# so rustc would warn about them on every build.
+[lints.rust]
+unexpected_cfgs = { level = "allow" }
+
+[features]
+default = []
+cpi = ["no-entrypoint"]
+no-entrypoint = []
+no-idl = []
+idl-build = ["anchor-lang/idl-build", "anchor-spl/idl-build"]
+
+[dependencies]
+anchor-lang = { version = "0.32.2", features = ["init-if-needed"] }
+anchor-spl = { version = "0.32.2", features = ["token_2022", "token_2022_extensions", "associated_token"] }
+spl-discriminator = "0.4"
+spl-pod = "0.5"
+spl-token-metadata-interface = "0.7"
+spl-tlv-account-resolution = "0.10.0"
+spl-transfer-hook-interface = "0.10.0"

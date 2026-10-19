@@ -1,0 +1,70 @@
+name: Deploy devnet
+
+# Manual deploy: the program keypair and the deploy wallet are secrets, so the
+# workflow is never triggered automatically.
+on:
+  workflow_dispatch:
+    inputs:
+      run_mint:
+        description: Run the init / mint / transfer demo after the deploy
+        type: boolean
+        default: true
+
+concurrency:
+  group: deploy-devnet
+  cancel-in-progress: false
+
+env:
+  CARGO_TERM_COLOR: always
+  RUST_BACKTRACE: 1
+  ANCHOR_PROVIDER_URL: ${{ secrets.ANCHOR_PROVIDER_URL }}
+  ANCHOR_WALLET: ${{ secrets.ANCHOR_WALLET }}
+
+jobs:
+  deploy:
+    name: deploy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: . -> target
+
+      - name: Install Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      # The program keypair is the upgrade authority of the deployed program:
+      # without it the program can never be upgraded or closed.
+      - name: Restore the program keypair
+        run: |
+          mkdir -p target/deploy
+          echo "${{ secrets.PROGRAM_KEYPAIR }}" | base64 -d > target/deploy/miory-keypair.json
+          chmod 600 target/deploy/miory-keypair.json
+
+      - name: Restore the deploy wallet
+        run: |
+          mkdir -p "$HOME/.config/solana"
+          echo "${{ secrets.DEPLOY_WALLET }}" | base64 -d > "$HOME/.config/solana/id.json"
+          chmod 600 "$HOME/.config/solana/id.json"
+
+      - name: Deploy
+        uses: coral-xyz/anchor@v0.32.2
+        with:
+          args: deploy --provider devnet
+
+      - name: Init, mint and transfer
+        if: ${{ inputs.run_mint }}
+        run: npm run deploy:mint
+        env:
+          MIORY_NAME: MIORY
+          MIORY_SYMBOL: MIORY
+          MIORY_URI: ${{ vars.MIORY_URI }}

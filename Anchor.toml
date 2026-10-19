@@ -1,0 +1,13 @@
+[toolchain]
+anchor_version = "0.32.2"
+
+[provider]
+cluster = "devnet"
+wallet = "~/.config/solana/id.json"
+
+[programs.devnet]
+miory = "FmoRzYQcTNoFsWFXYwaqNCjsmN4gHjufp4kGTJXJrAx5"
+
+[scripts]
+test = "npm run test:integration"
+deploy = "anchor deploy --program miory --provider devnet"
