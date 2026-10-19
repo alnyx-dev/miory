@@ -28,7 +28,7 @@ import {
   getAssociatedTokenAddressSync,
   getMint,
 } from "@solana/spl-token";
-import { Keypair, LAMPORTS_PER_SOL, PublicKey } from "@solana/web3.js";
+import { Keypair, PublicKey } from "@solana/web3.js";
 
 import {
   programId,
@@ -156,19 +156,9 @@ async function main() {
 
   // ------------------------------------------------------------- transfer
   console.log("\n[3/4] transfer through the hook ...");
+  // The recipient does not need SOL: the admin pays for the associated token
+  // account and for the fees.
   const recipient = Keypair.generate();
-  try {
-    const signature = await connection.requestAirdrop(
-      recipient.publicKey,
-      0.2 * LAMPORTS_PER_SOL,
-    );
-    await connection.confirmTransaction(signature, "confirmed");
-  } catch (error) {
-    console.warn("      airdrop failed:", (error as Error).message);
-    console.warn("      skipping the transfer demo (the recipient cannot pay the rent)");
-    return;
-  }
-
   const recipientAta = getAssociatedTokenAddressSync(
     mint,
     recipient.publicKey,
@@ -254,4 +244,5 @@ main().catch((error) => {
   console.error(error);
   process.exit(1);
 });
+
 

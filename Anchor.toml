@@ -10,4 +10,4 @@ miory = "FmoRzYQcTNoFsWFXYwaqNCjsmN4gHjufp4kGTJXJrAx5"
 
 [scripts]
 test = "npm run test:integration"
-deploy = "anchor deploy --program miory --provider devnet"
+deploy = "anchor deploy"
