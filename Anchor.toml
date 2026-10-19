@@ -2,8 +2,13 @@
 anchor_version = "0.32.2"
 
 [provider]
-cluster = "devnet"
+# `anchor test` only boots a local validator when the cluster is localnet,
+# and deploys to the cluster of the config otherwise.
+cluster = "localnet"
 wallet = "~/.config/solana/id.json"
+
+[programs.localnet]
+miory = "FmoRzYQcTNoFsWFXYwaqNCjsmN4gHjufp4kGTJXJrAx5"
 
 [programs.devnet]
 miory = "FmoRzYQcTNoFsWFXYwaqNCjsmN4gHjufp4kGTJXJrAx5"
@@ -11,3 +16,4 @@ miory = "FmoRzYQcTNoFsWFXYwaqNCjsmN4gHjufp4kGTJXJrAx5"
 [scripts]
 test = "npm run test:integration"
 deploy = "anchor deploy"
+"deploy:devnet" = "anchor deploy --provider.cluster devnet"

@@ -60,7 +60,7 @@ jobs:
           chmod 600 "$HOME/.config/solana/id.json"
 
       - name: Deploy
-        run: anchor deploy
+        run: anchor deploy --provider.cluster devnet
 
       - name: Init, mint and transfer
         if: ${{ inputs.run_mint }}
@@ -69,4 +69,5 @@ jobs:
           MIORY_NAME: MIORY
           MIORY_SYMBOL: MIORY
           MIORY_URI: ${{ vars.MIORY_URI }}
+
 
