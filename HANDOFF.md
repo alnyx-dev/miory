@@ -285,8 +285,10 @@ npx tsx scripts/dev/raydium-clmm.ts
   `.github/workflows/pages.yml` публикует статику на GitHub Pages.
 - On-chain URI уже обновлён на `https://alnyx-dev.github.io/miory/metadata.json`
   (`set_metadata` ✓, tx `5VH71tdNmc98QznFd9KwJmFr8uarK5nfxZt751EM79mi9Qj1odjthLXEhYrrjKYnjobScsGtN2VK4nqH7WujGwS7`).
-- **Pages требует публичный репозиторий** на бесплатном плане: сделайте репозиторий
-  публичным и перезапустите воркфлоу `Pages`.
+- **Сайт опубликован ✓**: https://alnyx-dev.github.io/miory/ (репозиторий стал
+  публичным, Pages-сайт создан через API с `build_type=workflow`, воркфлоу
+  `Pages` отрабатывает успешно). On-chain URI токена резолвится в
+  `https://alnyx-dev.github.io/miory/metadata.json` ✓.
 
 ## 8.1 Проверки, которые уже автоматизированы
 
