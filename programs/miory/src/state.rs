@@ -43,14 +43,10 @@ pub struct Config {
     pub transfer_fee_bps: u16,
     /// Absolute cap of the fee, in base units.
     pub max_fee: u64,
-    /// Maximum allowed transfer size; `0` disables the limit.
-    pub max_transfer: u64,
     /// Lifetime amount of minted tokens.
     pub total_minted: u64,
     /// Lifetime amount of burnt tokens.
     pub total_burned: u64,
-    /// Kill switch enforced by the transfer hook.
-    pub paused: bool,
     /// Canonical bump of the config PDA.
     pub bump: u8,
 }

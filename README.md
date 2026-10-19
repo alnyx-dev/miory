@@ -29,7 +29,6 @@ F:\MIORY
 | Mint authority | программа | PDA `authority` (`seeds = ["authority"]`), подписывает CPI чеканки |
 | Freeze authority | программа | та же PDA, `mint::freeze_authority` |
 | Fee authority | программа | та же PDA, `TransferFeeConfig` |
-| Transfer hook authority | программа | та же PDA, `TransferHook` |
 | Admin | кошелёк | `config.admin`, проверка `has_one = admin` во всех админ-инструкциях |
 
 PDA `authority` — программный аккаунт, поэтому подписать от его имени может
@@ -38,14 +37,7 @@ PDA `authority` — программный аккаунт, поэтому под
 
 ### Сжигание комиссии
 
-Механика выбрана исходя из ограничений рантайма Solana:
-
-* токен-программа передаёт в transfer hook аккаунты **только на чтение**, поэтому
-  хук не может изменить баланс получателя и сжечь из него комиссию;
-* `PermanentDelegate` позволил бы это, но выдал бы программе право изъять
-  токены у любого держателя — слишком опасная централизация для токена.
-
-Поэтому комиссия реализована нативным расширением `TransferFeeConfig`:
+Комиссия реализована нативным расширением Token-2022 `TransferFeeConfig`:
 
 1. токен-программа сама удерживает `fee = amount * bps / 10_000` (с потолком
    `max_fee`) на каждом переводе; сумма лежит на аккаунте получателя как
@@ -58,23 +50,42 @@ PDA `authority` — программный аккаунт, поэтому под
 Итог: supply токена уменьшается на каждом переводе, а экономический supply
 (то, что реально можно потратить) уменьшается мгновенно.
 
-### Transfer hook
+Комиссия стартует с нуля: расширение установлено сразу (mint проходит
+проверку расширений у AMM), а ставка поднимается позже через
+`set_transfer_fee`, когда появится ликвидность. Новая ставка вступает в силу
+через две эпохи — это защита Token-2022 от rug pull в конце эпохи.
 
-Mint несёт расширение `TransferHook`, программа-хук — это же приложение.
-Токен-программа вызывает её при каждом переводе (интерфейс SPL
-`TransferHookInterface`, дискриминатор `sha256("spl-transfer-hook-interface:execute")[:8]`
-= `692565c54bfb661a`).
+Почему не `PermanentDelegate` и не burn внутри хука: токен-программа передаёт
+в хук аккаунты только на чтение, а permanent delegate выдал бы программе право
+изъять токены у любого держателя.
 
-Хук проверяет:
+### Политика: заморозка вместо transfer hook
 
-* что вызов идёт изнутри перевода — токен-программа ставит флаг `transferring`
-  в расширении `TransferHookAccount` обоих аккаунтов, подделать его нельзя;
-* что переданные extra-аккаунты совпадают со списком `ExtraAccountMetaList`,
-  записанным при инициализации;
-* kill switch `config.paused`;
-* лимит `config.max_transfer` (0 — без лимита);
-* denylist: адрес владельца источника, владельца получателя и авторитет
-  перевода не должны быть в списке.
+Mint **не несёт** расширение `TransferHook`, и это осознанное решение:
+
+* хуку нужны его аккаунты-состояния, а их передаёт клиент (токен-программа
+  берёт их из `ExtraAccountMetaList` mint'а). Роутер DEX'а про них не знает и
+  не передаёт → любой перевод через обычный роутер падал бы с
+  `AccountNotEnoughKeys`;
+* AMM отказываются создавать пул для mint'а с расширением `TransferHook`
+  (у Raydium в перечень допустимых расширений входят `TransferFeeConfig`,
+  `MetadataPointer`, `TokenMetadata`, `InterestBearingConfig`, `ScaledUiAmount`).
+
+Поэтому политика обеспечивается freeze authority, который и так у mint'а:
+
+* `freeze_account` / `thaw_account` — заморозка/разморозка аккаунта
+  держателя (freeze authority = PDA программы, CPI подписывает она);
+* `set_denylist` + `sync_denylist` — список заблокированных адресов и его
+  применение: аккаунты заблокированных адресов замораживаются, а снятые с
+  списка — размораживаются. Токены заблокированного адреса не могут уйти.
+
+Цена этого решения: глобального kill switch нет (с хуком он был бы), а
+лимит на размер перевода тоже не enforce'ится. Вместо этого — точечная
+заморозка, которая работает мгновенно.
+
+Реализация хука (с extra-аккаунтами и проверками политики) осталась в истории
+git: `git show 4b0968d:programs/miory/src/lib.rs` — если понадобится mint с
+хуком, его можно поднять отдельной программой и отдельным mint'ом.
 
 ## PDA
 
@@ -84,24 +95,22 @@ Mint несёт расширение `TransferHook`, программа-хук �
 | `config` | `["config"]` | параметры протокола |
 | `denylist` | `["denylist"]` | заблокированные адреса |
 | `mint` | `["mint"]` | сам mint (Token-2022) |
-| `extra_metas` | `["extra-account-metas", mint]` | TLV-список extra-аккаунтов хука (интерфейс SPL) |
 
 ## Инструкции
 
 | Инструкция | Кто может | Назначение |
 |---|---|---|
-| `initialize(args)` | admin | создаёт mint, конфиг, denylist, vault, пишет список extra-аккаунтов |
+| `initialize(args)` | admin | создаёт mint, конфиг, denylist, пишет on-chain метаданные |
 | `mint_to(amount)` | admin | чеканка в ATA получателя (подписывает PDA) |
 | `burn(amount)` | владелец | сжигание своих токенов |
 | `collect_fees()` | anyone | вывод удержанных комиссий в vault и их сжигание |
 | `set_transfer_fee(bps, max_fee)` | admin | новая комиссия (вступает в силу через 2 эпохи) |
-| `set_transfer_policy(paused, max_transfer)` | admin | kill switch и лимит перевода |
 | `set_denylist(addresses)` | admin | список заблокированных адресов (до 64) |
+| `sync_denylist()` | admin | применяет список: замораживает/размораживает аккаунты |
 | `set_metadata(name, symbol, uri)` | admin | обновление on-chain метаданных |
 | `freeze_account()` / `thaw_account()` | admin | заморозка/разморозка аккаунта держателя |
 | `propose_admin(new_admin)` | admin | первый шаг передачи прав админа |
 | `accept_admin()` | pending admin | второй шаг передачи прав админа |
-| `execute_transfer(amount)` | токен-программа | transfer hook (проверки политики) |
 
 Передача прав админа двухшаговая: `propose_admin` от текущего админа и
 `accept_admin` от нового. Опечатка в адресе не приводит к потере контроля —
@@ -167,7 +176,7 @@ anchor test                  # поднимает локальный валид�
 | hands the admin role over in two steps | `propose_admin` + `accept_admin`, старый админ отрезан |
 | stores the metadata on chain | `TokenMetadata` в mint'е, update authority = PDA |
 | updates the metadata on chain | `set_metadata` переписывает name/symbol/uri |
-| blocks the denylisted addresses | denylist в хуке |
+| freezes the accounts of the denylisted addresses | `sync_denylist` замораживает аккаунты заблокированных |
 
 Программа и IDL собираются и обычным cargo (если Anchor CLI недоступен):
 
@@ -233,25 +242,6 @@ ANCHOR_WALLET=<кошелёк> \
 npx ts-mocha -p ./tsconfig.json -t 1000000 tests/miory.test.ts
 ```
 
-### Перевод через хук
-
-Токен-программа пересылает в хук только те аккаунты, которые описаны в
-`ExtraAccountMetaList`, поэтому клиент обязан передать их вместе с
-инструкцией:
-
-```ts
-const ix = transferCheckedWithExtraAccounts(
-  sourceAta, mint, destinationAta, owner, amount, decimals,
-  [extraMetas, config, denylist, PROGRAM_ID], // + аккаунт программы-хука
-);
-```
-
-`ExtraAccountMetaList` резолвится токен-программой, а хук дополнительно
-сверяет каждый аккаунт с seeds-констрейнтами, поэтому подменить их нельзя.
-Аккаунт самой программы-хука (`PROGRAM_ID`) тоже должен быть в списке: рантайм
-ищет его в аккаунтах транзакции, иначе CPI в хук падает с
-`Unknown program`.
-
 ## Безопасность
 
 * Все административные инструкции защищены `has_one = admin` + `Signer`.
@@ -259,9 +249,6 @@ const ix = transferCheckedWithExtraAccounts(
   протокол навсегда.
 * Mint authority, freeze authority и fee authority — только PDA программы,
   подпись внешним аккаунтом невозможна.
-* Инструкции хука недоступны для прямого вызова: дискриминатор совпадает с
-  интерфейсом SPL, а внутри проверяется флаг `transferring`, который ставит
-  только токен-программа.
 * Суммы считаются через `checked_*`, в профиле release включён
   `overflow-checks = true`.
 * `collect_fees` — permissionless, но тратит только комиссию, удержанную
@@ -280,9 +267,6 @@ const ix = transferCheckedWithExtraAccounts(
   отличаться.
 * `max_fee` — абсолютный потолок комиссии, `transfer_fee_bps` ограничен 5%
   жёстким лимитом программы (`MAX_TRANSFER_FEE_BPS`).
-* Список extra-аккаунтов хука фиксируется при `initialize` и не меняется:
-  инструкция, позволяющая его переписать, была бы DoS-вектором (переводы
-  перестали бы проходить из-за нехватки аккаунтов).
 * Список denylist ограничен 64 адресами (ёмкость аккаунта выдаётся при
   создании).
 * Метаданные ограничены по длине: name ≤ 32, symbol ≤ 10, uri ≤ 200 байт.

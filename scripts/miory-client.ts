@@ -43,11 +43,7 @@ export function derivePdas(program: PublicKey = programId()) {
   const [config] = PublicKey.findProgramAddressSync([seed("config")], program);
   const [denylist] = PublicKey.findProgramAddressSync([seed("denylist")], program);
   const [mint] = PublicKey.findProgramAddressSync([seed("mint")], program);
-  const [extraMetas] = PublicKey.findProgramAddressSync(
-    [seed("extra-account-metas"), mint.toBuffer()],
-    program,
-  );
-  return { authority, config, denylist, mint, extraMetas };
+  return { authority, config, denylist, mint };
 }
 
 /**
@@ -104,24 +100,21 @@ export function parseOnChainMetadata(data: Buffer): OnChainMetadata | null {
 }
 
 /**
- * `TransferChecked` with the extra accounts the token program needs in order
- * to resolve and forward the transfer hook accounts.
+ * `TransferChecked` for a Token-2022 mint.
  *
- * The SPL SDK does not expose a builder with extra accounts, so the
- * instruction is assembled by hand: `TokenInstruction.TransferChecked` (12),
- * `amount` (u64) and `decimals` (u8).
+ * The mint has no transfer hook, so no extra accounts are needed: a plain
+ * transfer works with every DEX router.
  */
-export function transferCheckedWithExtraAccounts(
+export function transferChecked(
   source: PublicKey,
   mint: PublicKey,
   destination: PublicKey,
   owner: PublicKey,
   amount: BNLike,
   decimals: number,
-  extraAccounts: PublicKey[],
 ): TransactionInstruction {
   const data = Buffer.alloc(10);
-  data.writeUInt8(12, 0);
+  data.writeUInt8(12, 0); // TokenInstruction.TransferChecked
   data.writeBigUInt64LE(BigInt(amount.toString()), 1);
   data.writeUInt8(decimals, 9);
 
@@ -132,7 +125,6 @@ export function transferCheckedWithExtraAccounts(
       { pubkey: mint, isSigner: false, isWritable: true },
       { pubkey: destination, isSigner: false, isWritable: true },
       { pubkey: owner, isSigner: true, isWritable: false },
-      ...extraAccounts.map((pubkey) => ({ pubkey, isSigner: false, isWritable: false })),
     ],
     data,
   });

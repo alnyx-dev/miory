@@ -1,7 +1,7 @@
 //! Seeds and protocol-wide limits for the MIORY token.
 
 /// PDA that owns every privileged role of the token:
-/// mint authority, freeze authority, permanent delegate, transfer-hook authority.
+/// mint authority, freeze authority, transfer-fee authority.
 pub const AUTHORITY_SEED: &[u8] = b"authority";
 /// PDA with the mutable protocol configuration.
 pub const CONFIG_SEED: &[u8] = b"config";
@@ -9,8 +9,6 @@ pub const CONFIG_SEED: &[u8] = b"config";
 pub const DENYLIST_SEED: &[u8] = b"denylist";
 /// PDA of the Token-2022 mint itself.
 pub const MINT_SEED: &[u8] = b"mint";
-/// Seed of the transfer-hook validation account (must match the SPL interface).
-pub const EXTRA_METAS_SEED: &[u8] = b"extra-account-metas";
 
 /// Decimals of the MIORY mint.
 pub const DECIMALS: u8 = 9;

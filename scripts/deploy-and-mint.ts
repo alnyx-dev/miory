@@ -35,12 +35,12 @@ import {
   createProgram,
   derivePdas,
   parseOnChainMetadata,
-  transferCheckedWithExtraAccounts,
+  transferChecked,
 } from "./miory-client";
 
 const RPC_URL = process.env.ANCHOR_PROVIDER_URL ?? "https://api.devnet.solana.com";
 const DECIMALS = Number(process.env.MIORY_DECIMALS ?? 9);
-const FEE_BPS = Number(process.env.MIORY_FEE_BPS ?? 100);
+const FEE_BPS = Number(process.env.MIORY_FEE_BPS ?? 0);
 const MAX_FEE = new BN(process.env.MIORY_MAX_FEE ?? 1_000_000);
 const MINT_AMOUNT = new BN(process.env.MIORY_MINT_AMOUNT ?? 100_000_000);
 
@@ -69,7 +69,7 @@ async function main() {
     commitment: "confirmed",
   });
   const program = createProgram(provider);
-  const { authority, config, denylist, mint, extraMetas } = derivePdas();
+  const { authority, config, denylist, mint } = derivePdas();
 
   console.log("program   :", programId().toBase58());
   console.log("rpc       :", RPC_URL);
@@ -78,7 +78,6 @@ async function main() {
   console.log("config    :", config.toBase58());
   console.log("denylist  :", denylist.toBase58());
   console.log("mint      :", mint.toBase58());
-  console.log("extraMetas:", extraMetas.toBase58());
 
   // ---------------------------------------------------------- initialize
   const configAccount = await connection.getAccountInfo(config);
@@ -89,7 +88,6 @@ async function main() {
         decimals: DECIMALS,
         transferFeeBps: FEE_BPS,
         maxFee: MAX_FEE,
-        maxTransfer: new BN(0),
         name: process.env.MIORY_NAME ?? "MIORY",
         symbol: process.env.MIORY_SYMBOL ?? "MIORY",
         uri: process.env.MIORY_URI ?? "https://miory.example/metadata.json",
@@ -100,7 +98,6 @@ async function main() {
         config,
         denylist,
         mint,
-        extraMetas,
         tokenProgram: TOKEN_2022_PROGRAM_ID,
         systemProgram: web3.SystemProgram.programId,
       })
@@ -166,19 +163,13 @@ async function main() {
     TOKEN_2022_PROGRAM_ID,
   );
 
-  const transferIx = transferCheckedWithExtraAccounts(
+  const transferIx = transferChecked(
     adminAta,
     mint,
     recipientAta,
     walletKeypair.publicKey,
     MINT_AMOUNT,
     DECIMALS,
-    // Extra accounts the token program resolves through the ExtraAccountMetaList
-    // and forwards to the transfer hook. The order follows the list written by
-    // the `initialize` instruction. The last one is the hook program account
-    // itself: the token program CPIs into it, so the runtime has to be able to
-    // resolve it from the transaction accounts.
-    [extraMetas, config, denylist, programId()],
   );
 
   const createAtaIx = createAssociatedTokenAccountInstruction(

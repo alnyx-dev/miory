@@ -3,6 +3,7 @@ import {
   ASSOCIATED_TOKEN_PROGRAM_ID,
   TOKEN_2022_PROGRAM_ID,
   createAssociatedTokenAccountInstruction,
+  getAccount,
   getAssociatedTokenAddressSync,
   getMint,
 } from "@solana/spl-token";
@@ -14,7 +15,7 @@ import {
   createProgram,
   derivePdas,
   parseOnChainMetadata,
-  transferCheckedWithExtraAccounts,
+  transferChecked,
 } from "../scripts/miory-client";
 
 const DECIMALS = 9;
@@ -46,7 +47,7 @@ describe("MIORY", () => {
   });
   const program = createProgram(provider);
   const admin = provider.wallet.publicKey;
-  const { authority, config, denylist, mint, extraMetas } = derivePdas();
+  const { authority, config, denylist, mint } = derivePdas();
 
   let recipient: Keypair;
   let recipientAta: PublicKey;
@@ -60,7 +61,6 @@ describe("MIORY", () => {
         decimals: DECIMALS,
         transferFeeBps: FEE_BPS,
         maxFee: new BN(1_000_000),
-        maxTransfer: new BN(0),
         name: "MIORY",
         symbol: "MIORY",
         uri: "https://miory.example/metadata.json",
@@ -71,7 +71,6 @@ describe("MIORY", () => {
         config,
         denylist,
         mint,
-        extraMetas,
         tokenProgram: TOKEN_2022_PROGRAM_ID,
         systemProgram: web3.SystemProgram.programId,
       })
@@ -174,19 +173,18 @@ describe("MIORY", () => {
     );
   });
 
-  it("withholds the transfer fee and runs the hook", async () => {
+  it("withholds the transfer fee on every transfer", async () => {
     const before = new BN(
       (await balanceOf(recipientAta)).toString(),
     );
 
-    const ix = transferCheckedWithExtraAccounts(
+    const ix = transferChecked(
       adminAta,
       mint,
       recipientAta,
       admin,
       TRANSFER_AMOUNT,
       DECIMALS,
-      [extraMetas, config, denylist, programId()],
     );
     await provider.sendAndConfirm(new web3.Transaction().add(ix), [], { commitment: "confirmed" });
 
@@ -202,36 +200,6 @@ describe("MIORY", () => {
     await collectFees(recipientAta);
     const after = (await getMint(connection, mint, "processed", TOKEN_2022_PROGRAM_ID)).supply;
     expect(before - after).to.equal(BigInt(TRANSFER_AMOUNT.toNumber() / 100));
-  });
-
-  it("blocks the transfers when the protocol is paused", async () => {
-    await (program.methods as any)
-      .setTransferPolicy(true, new BN(0))
-      .accounts({ config, admin })
-      .rpc();
-
-    const ix = transferCheckedWithExtraAccounts(
-      adminAta,
-      mint,
-      recipientAta,
-      admin,
-      TRANSFER_AMOUNT,
-      DECIMALS,
-      [extraMetas, config, denylist, programId()],
-    );
-
-    let failed = false;
-    try {
-      await provider.sendAndConfirm(new web3.Transaction().add(ix), [], { commitment: "confirmed" });
-    } catch (error) {
-      failed = true;
-    }
-    expect(failed).to.equal(true);
-
-    await (program.methods as any)
-      .setTransferPolicy(false, new BN(0))
-      .accounts({ config, admin })
-      .rpc();
   });
 
   it("schedules a new fee for the next epochs", async () => {
@@ -251,14 +219,13 @@ describe("MIORY", () => {
     );
 
     const amount = new BN(1_000_000);
-    const ix = transferCheckedWithExtraAccounts(
+    const ix = transferChecked(
       adminAta,
       mint,
       recipientAta,
       admin,
       amount,
       DECIMALS,
-      [extraMetas, config, denylist, programId()],
     );
     await provider.sendAndConfirm(new web3.Transaction().add(ix), [], { commitment: "confirmed" });
 
@@ -284,14 +251,13 @@ describe("MIORY", () => {
       })
       .rpc();
 
-    const ix = transferCheckedWithExtraAccounts(
+    const ix = transferChecked(
       adminAta,
       mint,
       recipientAta,
       admin,
       TRANSFER_AMOUNT,
       DECIMALS,
-      [extraMetas, config, denylist, programId()],
     );
 
     let failed = false;
@@ -402,20 +368,36 @@ describe("MIORY", () => {
     expect(metadata.uri).to.equal("https://miory.example/v2.json");
   });
 
-  it("blocks the denylisted addresses", async () => {
+  it("freezes the accounts of the denylisted addresses", async () => {
+    // the recipient holds tokens, its account is the one that gets frozen
     await (program.methods as any)
       .setDenylist([recipient.publicKey])
       .accounts({ denylist, admin })
       .rpc();
 
-    const ix = transferCheckedWithExtraAccounts(
-      adminAta,
-      mint,
+    await (program.methods as any)
+      .syncDenylist()
+      .accounts({
+        denylist,
+        admin,
+        config,
+        authority,
+        mint,
+        tokenProgram: TOKEN_2022_PROGRAM_ID,
+      })
+      .remainingAccounts([
+        { pubkey: recipientAta, isSigner: false, isWritable: true },
+      ])
+      .rpc();
+
+    // a frozen account cannot transfer its tokens
+    const ix = transferChecked(
       recipientAta,
-      admin,
+      mint,
+      adminAta,
+      recipient.publicKey,
       TRANSFER_AMOUNT,
       DECIMALS,
-      [extraMetas, config, denylist, programId()],
     );
 
     let failed = false;
@@ -426,10 +408,28 @@ describe("MIORY", () => {
     }
     expect(failed).to.equal(true);
 
+    // removing the address from the list thaws the account again
     await (program.methods as any)
       .setDenylist([])
       .accounts({ denylist, admin })
       .rpc();
+    await (program.methods as any)
+      .syncDenylist()
+      .accounts({
+        denylist,
+        admin,
+        config,
+        authority,
+        mint,
+        tokenProgram: TOKEN_2022_PROGRAM_ID,
+      })
+      .remainingAccounts([
+        { pubkey: recipientAta, isSigner: false, isWritable: true },
+      ])
+      .rpc();
+
+    const account = await getAccount(connection, recipientAta, "processed");
+    expect(account.isFrozen).to.equal(false);
   });
 });
 
