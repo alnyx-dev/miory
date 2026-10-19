@@ -30,11 +30,28 @@ jobs:
         with:
           workspaces: . -> target
 
+      - name: Install Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
       - name: Formatting
         run: cargo fmt --all -- --check
 
       - name: Clippy
         run: cargo clippy --workspace --all-targets -- -D warnings
+
+      - name: TypeScript
+        run: npx tsc --noEmit -p tsconfig.json
+
+      # Проверка зависимостей на известные уязвимости (RustSec Advisory DB).
+      - name: Audit the dependencies
+        uses: rustsec/audit-check@v2
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
 
   test:
     name: test
