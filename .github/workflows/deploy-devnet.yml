@@ -59,6 +59,9 @@ jobs:
           echo "${{ secrets.DEPLOY_WALLET }}" | base64 -d > "$HOME/.config/solana/id.json"
           chmod 600 "$HOME/.config/solana/id.json"
 
+      - name: Build the program
+        run: anchor build
+
       - name: Deploy
         run: anchor deploy --provider.cluster devnet
 
