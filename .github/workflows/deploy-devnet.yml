@@ -42,6 +42,9 @@ jobs:
 
       - run: npm ci
 
+      - name: Install the Solana and Anchor toolchains
+        run: bash scripts/ci/install-toolchain.sh
+
       # The program keypair is the upgrade authority of the deployed program:
       # without it the program can never be upgraded or closed.
       - name: Restore the program keypair
@@ -57,9 +60,7 @@ jobs:
           chmod 600 "$HOME/.config/solana/id.json"
 
       - name: Deploy
-        uses: coral-xyz/anchor@v0.32.2
-        with:
-          args: deploy --provider devnet
+        run: anchor deploy
 
       - name: Init, mint and transfer
         if: ${{ inputs.run_mint }}
@@ -68,3 +69,4 @@ jobs:
           MIORY_NAME: MIORY
           MIORY_SYMBOL: MIORY
           MIORY_URI: ${{ vars.MIORY_URI }}
+

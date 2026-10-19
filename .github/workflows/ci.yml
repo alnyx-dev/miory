@@ -57,26 +57,19 @@ jobs:
 
       - run: npm ci
 
-      - name: Unit tests
-        run: cargo test --workspace
-
-      # The action installs the Solana and the Anchor toolchains, the anchor
-      # command itself is a separate step so that a wallet can be created in
-      # between.
       - name: Install the Solana and Anchor toolchains
-        uses: coral-xyz/anchor@v0.32.2
-        with:
-          args: --version
+        run: bash scripts/ci/install-toolchain.sh
 
       - name: Create the test wallet
         run: solana-keygen new --no-bip39-passphrase --outfile ~/.config/solana/id.json --force
 
+      - name: Unit tests
+        run: cargo test --workspace
+
       # `anchor test` starts a local validator, deploys the program and runs
       # the TypeScript integration suite against it.
       - name: Integration tests
-        uses: coral-xyz/anchor@v0.32.2
-        with:
-          args: test
+        run: anchor test
 
   build:
     name: build
@@ -91,10 +84,11 @@ jobs:
         with:
           workspaces: . -> target
 
+      - name: Install the Solana and Anchor toolchains
+        run: bash scripts/ci/install-toolchain.sh
+
       - name: Build the program
-        uses: coral-xyz/anchor@v0.32.2
-        with:
-          args: build
+        run: anchor build
 
       - name: Upload the IDL
         uses: actions/upload-artifact@v4
