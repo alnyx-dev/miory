@@ -143,6 +143,21 @@ SPL-multisig или treasury Squads: адрес мультисига — это 
 Лимиты: name ≤ 32, symbol ≤ 10, uri ≤ 200 байт. При обновлении на более
 короткие значения лишняя ламбда остаётся на mint'е.
 
+## Состояние
+
+| | |
+|---|---|
+| Program ID | `8Zpfnt8KTaawG541AvpXxoYKo2dxd8Yk7U6k5Eu62HDF` (devnet, mейннет — тот же ключ) |
+| Mint | `AWpKSeyPmFAs91y3MTbJ1jRS4zKfBKbAv3uKci6JEKFA` (Token-2022, 9 decimals) |
+| Расширения mint'а | `TransferFeeConfig`, `MetadataPointer`, `TokenMetadata` — набор, который AMM принимают при создании пула |
+| Mint / freeze authority | PDA программы `8xtf1cgCga1nZNQYyyQrsLDgfUM4pvghNXPtWR8LAhT` |
+| Комиссия | 0 bps на старте, поднимается через `set_transfer_fee` (в силе через 2 эпохи) |
+| Метаданные | name `MIORY`, symbol `MIORY`, uri `https://miory.example/metadata.json` |
+
+Программа с transfer hook осталась в истории git (`4b0968d`) — её program id
+`FmoRzYQcTNoFsWFXYwaqNCjsmN4gHjufp4kGTJXJrAx5` больше не используется, а
+его ключpair утерян вместе с ability обновлять/закрывать ту программу.
+
 ## Сборка и запуск
 
 Тулчейн (уже установлен на этой машине):
@@ -227,7 +242,7 @@ Linux-сборкой `solana-test-validator`, BPF-бинарник платфо�
 # в WSL2
 export PATH="$HOME/.local/solana/solana-release/bin:$PATH"
 solana-test-validator --reset --log --ledger ~/miory-ledger \
-  --bpf-program FmoRzYQcTNoFsWFXYwaqNCjsmN4gHjufp4kGTJXJrAx5 \
+  --bpf-program 8Zpfnt8KTaawG541AvpXxoYKo2dxd8Yk7U6k5Eu62HDF \
   /mnt/f/MIORY/target/deploy/miory.so
 ```
 
