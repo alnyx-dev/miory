@@ -186,11 +186,13 @@ bash scripts/build-idl.sh                          # target/idl/miory.json
 `MIORY_NAME` (по умолчанию `MIORY`), `MIORY_SYMBOL`, `MIORY_URI`.
 
 ```bash
-# 1. пополнить devnet (2 SOL хватает на деплой программы)
+# 1. пополнить devnet (3.05 SOL уходит в ренту program-аккаунта, лучше 4)
 solana airdrop 2 --url devnet --keypair ~/.config/solana/id.json
 
 # 2. задеплоить программу
-anchor deploy --provider devnet
+# кластер в Anchor.toml по умолчанию localnet (только он поднимает локальный
+# валидатор для `anchor test`), поэтому devnet указывается явно
+npm run deploy:devnet        # = anchor deploy --provider.cluster devnet
 
 # 3. инициализация + чеканка + перевод через хук + сжигание комиссии
 ANCHOR_PROVIDER_URL=https://api.devnet.solana.com \
@@ -294,6 +296,14 @@ const ix = transferCheckedWithExtraAccounts(
 | `lint` | `cargo fmt --check` + `cargo clippy -- -D warnings` |
 | `test` | `cargo test --workspace` + `anchor test` (поднимает локальный валидатор, деплоит программу и гоняет TS-тесты) |
 | `build` | `anchor build` + выкладка IDL артефактом |
+
+Тулчейн в раннере ставится скриптом `scripts/ci/install-toolchain.sh`: репозиторий
+Anchor — это CLI, а не GitHub Action, поэтому Solana CLI ставится официальным
+установщиком, а Anchor CLI — готовым бинарником релиза.
+
+Кластер в `Anchor.toml` — `localnet`: только при нём `anchor test` поднимает
+локальный валидатор, иначе CLI деплоит на кластер из конфига. Devnet-деплой
+поэтому указывается явно: `anchor deploy --provider.cluster devnet`.
 
 Локально то же самое: `npm run lint`, `npm run test:integration` (нужен
 поднятый валидатор), `npm run build`.
