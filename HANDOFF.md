@@ -218,10 +218,14 @@ tests/miory.test.ts      11 интеграционных тестов
 
 ## 8. Что делать дальше (по порядку)
 
-1. **Пул на Raydium devnet** — финальная проверка «торгуемо»: создать пул
-   (CLMM/CPMM) с mint'ом `AWpKSey…` и прогнать свап. Нужны только devnet
-   SOL (есть) и Raydium SDK. Это же докажет, что mint проходит whitelist
-   расширений.
+1. **Пул на Raydium devnet** — финальная проверка «торгуемо». Скрипты готовы
+   (`scripts/dev/raydium-pool.ts` — CPMM, `scripts/dev/raydium-clmm.ts` — CLMM),
+   но на devnet **нет программы новой CPMM** (`CPMMoo8L3F4NbTegBCKVNunggL7H1ZpdTHKxQB5qKP1C`
+   — аккаунт есть, но owner = system program, не executable), поэтому пул
+   создаётся через CLMM (`DRayAUgENGQBKVaX8owNhgzkEDyoHTGVEGHVJT1E9pfH` — задеплоена).
+   CLMM-пул требует ~3 SOL: рента аккаунта пула, тик-массива и позиции.
+   Нужен SOL на деплой-кошельке — публичные devnet-фаунеты не выдают его с
+   текущего IP (rate limit), на кошельке сейчас 0.46 SOL.
 2. **Multisig-админ** — создать Squads-кошелёк 2/3 (отдельный кошелёк, не
    деплой-кошелёк) и передать ему права:
    `propose_admin(treasury)` → `accept_admin()` от treasury.
@@ -233,9 +237,30 @@ tests/miory.test.ts      11 интеграционных тестов
 5. **Мейннет-деплой** — тот же program id и ключpair (на мейннете PDA mint'а
    свободен), нужен SOL (~3.05 ренты program-аккаунта) и топ-комиссия.
 6. **Ликвидность** — не наша часть: пул MIORY/SOL, наполнение, дальше Jupiter
-   подхватывает токен автоматически.
+   подхватывает токен автоматически. Скрипты из п.1 показывают, как это
+   делается технически.
 7. **Опционально** — отдельный mint с transfer hook (реализация в истории
    git), если понадобится on-chain политика без заморозки.
+
+### Как создать пул (когда будет SOL)
+
+```bash
+# на devnet, ~3 SOL на кошельке
+ANCHOR_PROVIDER_URL=https://api.devnet.solana.com \
+ANCHOR_WALLET=~/.config/solana/id.json \
+npx tsx scripts/dev/raydium-clmm.ts
+```
+
+Особенности, которые стоит помнить:
+
+- wSOL-аккаунт владельца создаётся **вручную** (classic token program,
+  `InitializeAccount`): associated token program v7 инициализирует аккаунты
+  только через Token-2022, а нативный mint принадлежит classic-программе;
+- для Token-2022 mint'а в Raydium нужен путь `SwapV2` (CLMM) — обычный
+  `Swap` не поддерживает расширения;
+- SDK v2 (`@raydium-io/raydium-sdk-v2`, 0.2.74-alpha) отдаёт адрес пула в
+  `result.builder.returns.address.poolId` (у CPMM) — типы в .d.ts для этого
+  кривые, поэтому в скриптах используются `as any`.
 
 ---
 
