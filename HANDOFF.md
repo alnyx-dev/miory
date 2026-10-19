@@ -279,6 +279,24 @@ npx tsx scripts/dev/raydium-clmm.ts
 
 ---
 
+## 8.1 Проверки, которые уже автоматизированы
+
+| Проверка | Где | Статус |
+|---|---|---|
+| `cargo fmt --check` | CI, lint | ✓ |
+| `cargo clippy -D warnings` | CI, lint | ✓ |
+| `npx tsc --noEmit` | CI, lint | ✓ |
+| `cargo audit` (RustSec) | CI, lint | ✓ 0 уязвимостей |
+| `cargo test --workspace` | CI, test | ✓ |
+| `anchor test` (11 интеграционных тестов) | CI, test | ✓ |
+
+Информационные предупреждения аудита (не уязвимости): `bincode` и
+`libsecp256k1` помечены как неподдерживаемые, `rand` 0.7.3 — unsound при
+кастомном логгере. Всё это в дереве Solana/Anchor и в BPF-бинарник программы
+не попадает.
+
+---
+
 ## 9. Полезные ссылки
 
 - Raydium: поддержка Token-2022 и transfer fee —
