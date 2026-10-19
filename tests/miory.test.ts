@@ -111,6 +111,21 @@ describe("MIORY", () => {
       .rpc();
 
   before(async () => {
+    // The local validator has a faucet, on other clusters the wallet has to be
+    // funded beforehand.
+    const adminBalance = await connection.getBalance(admin, "processed");
+    if (adminBalance < LAMPORTS_PER_SOL) {
+      try {
+        const signature = await connection.requestAirdrop(admin, 10 * LAMPORTS_PER_SOL);
+        await connection.confirmTransaction(signature, "confirmed");
+      } catch (error) {
+        console.warn(
+          `could not fund the test wallet: ${(error as Error).message}. ` +
+            "The wallet needs SOL to pay for the transactions.",
+        );
+      }
+    }
+
     recipient = Keypair.generate();
     adminAta = getAssociatedTokenAddressSync(mint, admin, true, TOKEN_2022_PROGRAM_ID);
     recipientAta = getAssociatedTokenAddressSync(

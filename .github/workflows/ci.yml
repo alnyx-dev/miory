@@ -60,6 +60,17 @@ jobs:
       - name: Unit tests
         run: cargo test --workspace
 
+      # The action installs the Solana and the Anchor toolchains, the anchor
+      # command itself is a separate step so that a wallet can be created in
+      # between.
+      - name: Install the Solana and Anchor toolchains
+        uses: coral-xyz/anchor@v0.32.2
+        with:
+          args: --version
+
+      - name: Create the test wallet
+        run: solana-keygen new --no-bip39-passphrase --outfile ~/.config/solana/id.json --force
+
       # `anchor test` starts a local validator, deploys the program and runs
       # the TypeScript integration suite against it.
       - name: Integration tests
