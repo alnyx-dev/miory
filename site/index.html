@@ -62,7 +62,8 @@
       <p>
         Токен, у которого правом выпуска владеет не кошелёк, а программа. Mint authority,
         freeze authority и fee authority — это PDA программы: никто вне кода не может выпустить
-        токен, заморозить его или вывести удержанные комиссии.
+        токен, заморозить его или вывести удержанные комиссии. А правами администратора
+        владеет мультисиг 2 из 3 — одно устройство не решает ничего.
       </p>
 
       <div class="card">
@@ -71,6 +72,7 @@
         <div class="row"><span>Mint</span><span class="mono">AWpKSeyPmFAs91y3MTbJ1jRS4zKfBKbAv3uKci6JEKFA</span></div>
         <div class="row"><span>Decimals</span><span>9</span></div>
         <div class="row"><span>Расширения</span><span class="mono">TransferFeeConfig, MetadataPointer, TokenMetadata</span></div>
+        <div class="row"><span>Админ</span><span class="mono">Squads-мультисиг, 2 из 3</span></div>
         <div class="row"><span>Supply</span><span id="supply">—</span></div>
       </div>
 
@@ -79,14 +81,16 @@
         <li>Комиссия перевода удерживается нативным расширением <code>TransferFeeConfig</code>: токен-программа сама удерживает её и кладёт на аккаунт получателя как withheld fees.</li>
         <li>Вывести удержанное может только fee authority — PDA программы. Единственная инструкция, которая это делает, <code>collect_fees</code>, сжигает комиссию, а не выводит её на кошелёк. Право вызвать её есть у любого — выигрывают держатели.</li>
         <li>Политика держится на freeze authority: <code>freeze_account</code> / <code>thaw_account</code> и <code>sync_denylist</code>, который применяет список заблокированных адресов заморозкой их аккаунтов.</li>
-        <li>Правом админа передаётся через двухшаговую схему <code>propose_admin</code> → <code>accept_admin</code>: опечатка в адресе не блокирует протокол навсегда.</li>
+        <li>Права админа принадлежат <strong>Squads-мультисигу</strong> (2 из 3): ни один кошелёк в одиночку не может выпустить токен, заморозить его или изменить комиссию — нужно согласие большинства.</li>
+        <li>Передача админа двухшаговая: <code>propose_admin</code> → <code>accept_admin</code>. Опечатка в адресе не блокирует протокол навсегда.</li>
       </ul>
 
       <h2>Ссылки</h2>
       <ul>
         <li><a href="https://explorer.solana.com/address/AWpKSeyPmFAs91y3MTbJ1jRS4zKfBKbAv3uKci6JEKFA?cluster=devnet">Mint в Explorer</a></li>
         <li><a href="https://explorer.solana.com/address/8Zpfnt8KTaawG541AvpXxoYKo2dxd8Yk7U6k5Eu62HDF?cluster=devnet">Программа в Explorer</a></li>
-        <li><a href="https://explorer.solana.com/address/AEcay6mpCFZDWrd5X33fJWuNveC98JYeskKBAsc7oiPg?cluster=devnet">Админ-кошелёк в Explorer</a></li>
+        <li><a href="https://explorer.solana.com/address/6yUknbLYEV5Pg63PuTGMP8dz86i2LcqprHyCDqSdLVth?cluster=devnet">Админ (vault PDA Squads) в Explorer</a></li>
+        <li><a href="https://explorer.solana.com/address/ADjx7RciR4kc8UZ6VX4cEeZXT9pEeByMoc6knAmPPjkL?cluster=devnet">Мультисиг Squads в Explorer</a></li>
         <li><a href="./metadata.json">Метаданные токена (JSON)</a></li>
       </ul>
 
