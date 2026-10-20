@@ -138,6 +138,35 @@ On-chain URI токена указывает на `https://alnyx-dev.github.io/m
 план) и перезапустите воркфлоу `Pages`. Пока репозиторий приватный, метаданные
 доступны напрямую в репозитории: `site/metadata.json`.
 
+## Админ — Squads-мультисиг
+
+Права админа на devnet переданы **Squads-мультисигу** (Squads v4,
+program `SQDS4ep65T869zMMBKyuUq6aD6EgTu8psMjkvj52pCf`), 2-of-3:
+
+| | |
+|---|---|
+| Multisig PDA | `ADjx7RciR4kc8UZ6VX4cEeZXT9pEeByMoc6knAmPPjkL` |
+| Vault PDA (= `config.admin`) | `6yUknbLYEV5Pg63PuTGMP8dz86i2LcqprHyCDqSdLVth` |
+| Threshold | 2 из 3 |
+
+Деплой-кошелёк (`AEcay6mp…`) больше **не админ** — вызов админ-инструкций
+от него отклоняется с `ConstraintHasOne`.
+
+Ключевая деталь Squads v4: подписент исполняемой транзакции — не сам
+мультисиг, а его **vault PDA** (`invoke_signed` с seeds
+`[multisig, multisig_pda, "vault", index]`). Поэтому админом становится
+именно vault PDA: у MIORY `accept_admin` требует, чтобы админ был
+подписантом.
+
+Скрипты:
+
+- `scripts/dev/squads-admin.ts` — создание мультисига, `propose_admin`,
+  vault-транзакция с `accept_admin`, голоса, исполнение. Возобновляемый:
+  состояние в `scripts/dev/.squads-state.json` (в .gitignore).
+- `scripts/dev/squads-admin-check.ts` — проверка, что мультисиг реально
+  управляет протоколом: админ-инструкция (`set_transfer_fee`) выполняется
+  через Squads.
+
 ## Зависимости и аудит
 
 `cargo audit` (RustSec Advisory DB) — **0 уязвимостей** ✓. Проверка запускается

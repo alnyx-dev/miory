@@ -155,7 +155,7 @@ tests/miory.test.ts      11 интеграционных тестов
   deploy-devnet.yml      ручной деплой на devnet
 ```
 
-Инструкции программы (13): `initialize`, `mint_to`, `burn`, `collect_fees`,
+Инструкции программы (12): `initialize`, `mint_to`, `burn`, `collect_fees`,
 `set_transfer_fee`, `set_denylist`, `sync_denylist`, `set_metadata`,
 `freeze_account`, `thaw_account`, `propose_admin`, `accept_admin`.
 
@@ -289,6 +289,49 @@ npx tsx scripts/dev/raydium-clmm.ts
   публичным, Pages-сайт создан через API с `build_type=workflow`, воркфлоу
   `Pages` отрабатывает успешно). On-chain URI токена резолвится в
   `https://alnyx-dev.github.io/miory/metadata.json` ✓.
+
+## 7.2 Админ — Squads-мультисиг (сделано ✓)
+
+Права админа на devnet переданы Squads-мультисигу v4 (2-of-3), проверено
+end-to-end.
+
+| | |
+|---|---|
+| Squads program | `SQDS4ep65T869zMMBKyuUq6aD6EgTu8psMjkvj52pCf` (задеплоен на devnet) |
+| Multisig PDA | `ADjx7RciR4kc8UZ6VX4cEeZXT9pEeByMoc6knAmPPjkL` |
+| Vault PDA (= `config.admin`) | `6yUknbLYEV5Pg63PuTGMP8dz86i2LcqprHyCDqSdLVth` |
+| Участники | 3 ключа в `scripts/dev/.squads-state.json` (в .gitignore) |
+
+**Как это работает в Squads v4** (проверено по исходникам
+`Squads-Protocol/v4` и на-chain):
+
+- Подписент исполняемой транзакции — **vault PDA**, а не сам мультисиг:
+  `vault_transaction_execute` вызывает `invoke_signed` с seeds
+  `[multisig, multisig_pda, "vault", index]`. Мультисиг-PDA хранит только
+  конфиг.
+- Поэтому новым админом MIORY становится **vault PDA**: у `accept_admin`
+  `pending_admin` — это `Signer`.
+- `new_validated` освобождает vault-PDA от требования «signer в
+  account_infos»: PDA не может подписать внешнюю транзакцию, он подписывает
+  только внутри CPI.
+
+**Доказанные факты на devnet:**
+
+- `config.admin` = vault PDA, `pending_admin` очищен ✓
+- деплой-кошелёк отклоняется с `ConstraintHasOne` (2001) ✓
+- `set_transfer_fee` выполнена через Squads (2 голоса + исполнение) ✓,
+  комиссия возвращена в 0 bps ✓
+
+**Скрипты:** `scripts/dev/squads-admin.ts` (передача), 
+`scripts/dev/squads-admin-check.ts` (проверка управления). Оба
+возобновляемые.
+
+**Для мейннета:** участники мультисига должны быть ключами на разных
+устройствах; деплой-кошелёк не должен быть среди них. Официальный Squads
+CLI существует (`cargo install squads-multisig-cli`, репозиторий
+`Squads-Protocol/v4`), но он не нужен — сценарий закрыт через SDK
+`@sqds/multisig` (это Squads **v4**, его program id совпадает с
+`declare_id` в исходниках).
 
 ## 8.1 Проверки, которые уже автоматизированы
 

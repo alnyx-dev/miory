@@ -26,3 +26,6 @@ dist
 .idea
 .vscode
 .DS_Store
+
+# Local Squads demo keys (multisig members + create key). Never commit.
+scripts/dev/.squads-*.json
